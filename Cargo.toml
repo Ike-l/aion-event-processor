@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+aion-event = { path = "../../aion-event" }
+aion-program = { path = "../../aion-program" }
+aion-processor = { path = "../../aion-processor" }
+aion-system = { path = "../../aion-system" }
