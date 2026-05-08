@@ -7,9 +7,13 @@ edition = "2024"
 aion-program = { path = "../../aion-program" }
 aion-processor = { path = "../../aion-processor" }
 aion-system = { path = "../../aion-system" }
-aion-event = { path = "../../aion-event", optional = true }
+aion-event = { path = "../../aion-event" }
+execution-graph = { path = "../../execution_graph" }
+tokio = { version = "1.52.3", features = ["rt-multi-thread"]}
+threadpool = { version = "1.8.1" }
 
 [features]
-default = ["blocking-processor", "non-blocking-processor"]
+default = ["blocking-processor", "non-blocking-processor", "spawn-all-system-events"]
 blocking-processor = []
 non-blocking-processor = []
+spawn-all-system-events = []
