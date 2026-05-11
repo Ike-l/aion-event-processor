@@ -75,7 +75,7 @@ pub mod prelude {
     #[cfg(feature = "non-blocking-processor")]
     pub use super::{
         non_blocking_processor::{
-
+            NonBlockingProcessor
         }
     };
 }
