@@ -1,7 +1,7 @@
 use std::{collections::{HashMap, HashSet}, sync::Arc};
 
 use aion_event::prelude::{EventBuffer, EventHistory, EventSystem};
-use aion_processor::prelude::{ProcessConfig, Processor, SystemQueue};
+use aion_processor::prelude::{ActivatableSystemQueue, ProcessConfig, Processor, SystemQueue};
 use aion_program::prelude::ProgramRegistry;
 
 use crate::prelude::{get_blocking_processor_system_registry, get_links, get_mut_active_system_registry, get_runtime, get_system_criteria_registry, get_system_event_registry, get_system_metadata, get_threadpool};
@@ -69,14 +69,16 @@ impl EventSystem for BlockingProcessor {
         let threadpool = threadpool.as_ref().map(|threadpool| threadpool.as_ref());
         let runtime = runtime.as_ref().map(|runtime| runtime.as_ref());
 
-        for ((program_id, system_id), _) in system_queue.systems() {
+        let activatable_system_queue = ActivatableSystemQueue::new(system_queue, program_registry);
+        
+        for ((program_id, system_id), _) in activatable_system_queue.get_systems() {
             if let Ok(Ok(Ok(mut active_system_registry))) = get_mut_active_system_registry(program_registry, Some((*program_id).clone())) {
                 active_system_registry.as_mut().insert((*system_id).clone());
             }
         }
 
         let results = Processor::process_blocking(
-            system_queue, 
+            activatable_system_queue, 
             registry_links,
             main_thread_systems, 
             program_registry, 
@@ -88,7 +90,9 @@ impl EventSystem for BlockingProcessor {
 
         for program_id in program_registry.program_ids() {
             if let Ok(Ok(Ok(mut active_system_registry))) = get_mut_active_system_registry(program_registry, Some(program_id.clone())) {
-                active_system_registry.as_mut().clear();
+                todo!("only remove from active what was added before");
+                // since NonBlocking can add to this registry
+                // active_system_registry.as_mut().clear();
             }
         }
 
