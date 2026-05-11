@@ -71,8 +71,10 @@ impl EventSystem for BlockingProcessor {
 
         let activatable_system_queue = ActivatableSystemQueue::new(system_queue, program_registry);
         
+        let mut activated_systems = HashSet::new();
         for ((program_id, system_id), _) in activatable_system_queue.get_systems() {
             if let Ok(Ok(Ok(mut active_system_registry))) = get_mut_active_system_registry(program_registry, Some((*program_id).clone())) {
+                activated_systems.insert((*system_id).clone());
                 active_system_registry.as_mut().insert((*system_id).clone());
             }
         }
@@ -90,9 +92,7 @@ impl EventSystem for BlockingProcessor {
 
         for program_id in program_registry.program_ids() {
             if let Ok(Ok(Ok(mut active_system_registry))) = get_mut_active_system_registry(program_registry, Some(program_id.clone())) {
-                todo!("only remove from active what was added before");
-                // since NonBlocking can add to this registry
-                // active_system_registry.as_mut().clear();
+                *active_system_registry.as_mut() = active_system_registry.as_mut().difference(&activated_systems).cloned().collect();
             }
         }
 
