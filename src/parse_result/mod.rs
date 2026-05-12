@@ -1,6 +1,6 @@
 use std::{collections::HashSet, sync::Arc};
 
-use aion_event::prelude::{Event, EventBuffer};
+use aion_event::prelude::Event;
 use aion_processor::prelude::SystemId;
 use aion_program::prelude::ProgramRegistry;
 use aion_system::prelude::SystemResult;

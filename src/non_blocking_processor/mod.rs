@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use std::{collections::{HashMap, HashSet}, sync::Arc};
 
 use aion_event::prelude::{EventBuffer, EventHistory, EventSystem};
-use aion_processor::prelude::{Processor, Unique};
+use aion_processor::prelude::{ActivatableSystemQueue, Processor, SystemQueue, Unique};
 use aion_program::prelude::{AccessBuilder, ProgramRegistry};
 use aion_system::prelude::StoredSystem;
 
-use crate::prelude::{get_mut_join_handle_buffer, parse_result};
+use crate::prelude::{get_mut_active_system_registry, get_mut_join_handle_buffer, get_runtime, get_system_criteria_registry, get_system_metadata, parse_result};
 
 // should be called *after* BlockingProcessor because it might acquire conflicting accesses which are held for the entire duration.
 
@@ -69,29 +69,69 @@ impl EventSystem for NonBlockingProcessor {
                         },
                         Err(error) => todo!(),
                     }
+
+                    if let Ok(Ok(Ok(mut active_system_registry))) = get_mut_active_system_registry(program_registry, Some(program_id.clone())) {
+                        active_system_registry.as_mut().remove(system_metadata.system_resource_id());
+                    }
                 },
                 Err(_) => todo!(),
             }
         }
 
 
+        let mut systems = HashMap::new();
+        for program_id in program_registry.program_ids() {
+            if let Ok(Ok(Ok(blocking_processor_system_registry))) = get_non_blocking_processor_system_registry(program_registry, Some(program_id.clone())) {
+                for system_metadata_resource_id in blocking_processor_system_registry.as_ref().iter() {
+                    let Ok(Ok(system_metadata)) = get_system_metadata(program_registry, Some(program_id.clone()), system_metadata_resource_id.clone()) else { continue };
+                    if system_metadata.as_ref().requires_main_thread() {
+                        // TODO LOG CANNOT PROCESS THIS SYSTEM
+                        continue;
+                    }
+                    
+                    let resource_id = system_metadata.as_ref().system_resource_id();
+                    if let Ok(Ok(Ok(system_conditionals))) = get_system_criteria_registry(program_registry, Some(program_id.clone())) {
+                        if let Some(system_conditional) = system_conditionals.as_ref().get(resource_id) {
+                            if !system_conditional.test(current_events) {
+                                continue;
+                            }
+                        }
+                    }
 
 
-        // START
-        // for each program
-        // for system metadata in non blocking system registry
-        // if system.test passes
-        // systems.insert(program, resource, system metadata)
 
-        // map systems into queue input
+                    systems.insert((program_id, resource_id.clone()), system_metadata);
+                }
+            }
+        }
 
-        // get runtime
+        let system_queue_input = systems.iter().map(|((program_id, resource_id), system_metadata)| {
+            ((*program_id, resource_id), system_metadata.as_ref())
+        });
+
+        let system_queue = SystemQueue::new(system_queue_input);
+        
+        let activatable_system_queue = ActivatableSystemQueue::new(system_queue, program_registry);
+
+        let runtime = if let Ok(Ok(runtime)) = get_runtime(program_registry) {
+            Some(runtime)
+        } else { None };
+
+        let runtime = runtime.as_ref().map(|runtime| runtime.as_ref()).unwrap();
+
+        let mut activated_systems = HashSet::new();
+        for ((program_id, system_id), _) in activatable_system_queue.get_systems() {
+            if let Ok(Ok(Ok(mut active_system_registry))) = get_mut_active_system_registry(program_registry, Some((*program_id).clone())) {
+                activated_systems.insert((*system_id).clone());
+                active_system_registry.as_mut().insert((*system_id).clone());
+            }
+        }
 
         // for each system in system queue
         // put into active system registry
 
         let join_handles = Processor::process_non_blocking(
-            system_queue, 
+            activatable_system_queue, 
             program_registry, 
             runtime
         );
