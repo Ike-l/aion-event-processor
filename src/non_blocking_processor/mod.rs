@@ -127,16 +127,17 @@ impl EventSystem for NonBlockingProcessor {
             }
         }
 
-        // for each system in system queue
-        // put into active system registry
-
         let join_handles = Processor::process_non_blocking(
             activatable_system_queue, 
             program_registry, 
             runtime
         );
 
-        // store join handles
+        if let Ok(Ok(Ok(join_handle_buffer))) = get_mut_join_handle_buffer(program_registry) {
+            let buffer = join_handle_buffer.as_mut();
+            buffer.0.extend(join_handles.0);
+            buffer.1.extend(join_handles.1);
+        }
 
         event_buffer
     }
