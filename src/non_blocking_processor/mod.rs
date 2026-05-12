@@ -5,8 +5,9 @@ use aion_processor::prelude::{ActivatableSystemQueue, Processor, SystemQueue, Un
 use aion_program::prelude::{AccessBuilder, ProgramRegistry};
 use aion_system::prelude::StoredSystem;
 
-use crate::prelude::{get_mut_active_system_registry, get_mut_join_handle_buffer, get_runtime, get_system_criteria_registry, get_system_metadata, parse_result};
+use crate::prelude::{get_mut_active_system_registry, get_mut_join_handle_buffer, get_non_blocking_processor_system_registry, get_runtime, get_system_criteria_registry, get_system_metadata, parse_result};
 
+pub mod non_blocking_processor_system_registry;
 // should be called *after* BlockingProcessor because it might acquire conflicting accesses which are held for the entire duration.
 
 // split into Start/Finish if systems want to know if a background system is active? (since even if it has finished it will still be active until it is joined at the start of this execute)
@@ -18,14 +19,14 @@ impl EventSystem for NonBlockingProcessor {
         &self,
         program_registry: &Arc<ProgramRegistry>, 
         current_events: &EventBuffer,
-        event_history: &EventHistory,
+        _event_history: &EventHistory,
     ) -> EventBuffer {
         let mut event_buffer = EventBuffer::default();
 
         let mut finished_sync_join_handles = Vec::new();
         let mut finished_async_join_handles = Vec::new();
 
-        if let Ok(Ok(Ok(join_handle_buffer))) = get_mut_join_handle_buffer(program_registry) {
+        if let Ok(Ok(Ok(mut join_handle_buffer))) = get_mut_join_handle_buffer(program_registry) {
             let buffer = join_handle_buffer.as_mut();
             let finished_sync = buffer.0.extract_if(.., |sync_join_handle| {
                 sync_join_handle.is_finished()
@@ -46,7 +47,7 @@ impl EventSystem for NonBlockingProcessor {
                 Ok((program_id, system_metadata, stored_system_kind, result)) => {
                     // TODO consume system metadata and remove clones
                     let prompted_access = AccessBuilder {
-                        program_id: Some(program_id),
+                        program_id: Some(program_id.clone()),
                         program_password: system_metadata.system_program_password().clone(),
                         user_details: system_metadata.user_details().clone(),
                         resource_id: Some(system_metadata.system_resource_id().clone()),
@@ -65,12 +66,12 @@ impl EventSystem for NonBlockingProcessor {
                     }
                     match result {
                         Ok(result) => {
-                            event_buffer.extend(parse_result(result, program_registry, (program_id, system_metadata.system_resource_id().clone())).into_iter());
+                            event_buffer.extend(parse_result(result, program_registry, (program_id.clone(), system_metadata.system_resource_id().clone())).into_iter());
                         },
-                        Err(error) => todo!(),
+                        Err(_error) => { /*TODO LOG ERROR */ },
                     }
 
-                    if let Ok(Ok(Ok(mut active_system_registry))) = get_mut_active_system_registry(program_registry, Some(program_id.clone())) {
+                    if let Ok(Ok(Ok(mut active_system_registry))) = get_mut_active_system_registry(program_registry, Some(program_id)) {
                         active_system_registry.as_mut().remove(system_metadata.system_resource_id());
                     }
                 },
@@ -133,7 +134,7 @@ impl EventSystem for NonBlockingProcessor {
             runtime
         );
 
-        if let Ok(Ok(Ok(join_handle_buffer))) = get_mut_join_handle_buffer(program_registry) {
+        if let Ok(Ok(Ok(mut join_handle_buffer))) = get_mut_join_handle_buffer(program_registry) {
             let buffer = join_handle_buffer.as_mut();
             buffer.0.extend(join_handles.0);
             buffer.1.extend(join_handles.1);
