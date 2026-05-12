@@ -6,6 +6,10 @@ pub mod get_runtime;
 pub mod get_system_criteria_registry;
 pub mod get_system_event_registry;
 pub mod get_mut_active_system_registry;
+pub mod get_mut_join_handle_buffer;
+
+#[cfg(any(feature = "blocking-processor", feature = "non-blocking-processor"))]
+pub mod parse_result;
 
 #[cfg(feature = "blocking-processor")]
 pub mod blocking_processor;
@@ -55,7 +59,16 @@ pub mod prelude {
             get_system_event_registry
         },
         get_mut_active_system_registry::{
+            ACTIVE_SYSTEM_REGISTRY_ACCESS_BUILDER,
+            ACTIVE_SYSTEM_REGISTRY_RESOURCE_ID,
+            ActiveSystemRegistry,
             get_mut_active_system_registry
+        },
+        get_mut_join_handle_buffer::{
+            JOIN_HANDLE_BUFFER_ACCESS_BUILDER,
+            JOIN_HANDLE_BUFFER_RESOURCE_ID,
+            JoinHandleBuffer,
+            get_mut_join_handle_buffer
         }
     };
 
@@ -76,6 +89,13 @@ pub mod prelude {
     pub use super::{
         non_blocking_processor::{
             NonBlockingProcessor
+        }
+    };
+
+    #[cfg(any(feature = "blocking-processor", feature = "non-blocking-processor"))]
+    pub use super::{
+        parse_result::{
+            parse_result
         }
     };
 }
