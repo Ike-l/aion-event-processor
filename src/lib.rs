@@ -88,7 +88,13 @@ pub mod prelude {
     #[cfg(feature = "non-blocking-processor")]
     pub use super::{
         non_blocking_processor::{
-            NonBlockingProcessor
+            NonBlockingProcessor,
+            non_blocking_processor_system_registry::{
+                NON_BLOCKING_PROCESSOR_SYSTEM_REGISTRY_ACCESS_BUILDER,
+                NON_BLOCKING_PROCESSOR_SYSTEM_REGISTRY_RESOURCE_ID,
+                NonBlockingProcessorSystemRegistry,
+                get_non_blocking_processor_system_registry
+            }
         }
     };
 
