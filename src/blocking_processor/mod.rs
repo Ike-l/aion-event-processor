@@ -4,7 +4,7 @@ use aion_event::prelude::{EventBuffer, EventHistory, EventSystem};
 use aion_processor::prelude::{ActivatableSystemQueue, ProcessConfig, Processor, SystemQueue};
 use aion_program::prelude::ProgramRegistry;
 
-use crate::prelude::{get_blocking_processor_system_registry, get_links, get_mut_active_system_registry, get_runtime, get_system_criteria_registry, get_system_event_registry, get_system_metadata, get_threadpool};
+use crate::prelude::{get_blocking_processor_system_registry, get_links, get_mut_active_system_registry, get_runtime, get_system_criteria_registry, get_system_metadata, get_threadpool, parse_result};
 
 pub mod blocking_processor_system_registry;
 
@@ -96,40 +96,9 @@ impl EventSystem for BlockingProcessor {
             }
         }
 
-        // resource id is SystemMetadataResourceId
-        for ((program_id, resource_id), result) in results {
-            // TODO: LOG RESULT
-
-            // for now the only way to parse results is by spawning an event
-            // so put the whole block into the if let
-            // otherwise could separate it out and only get when needed? (performance implication)
-            if let Ok(Ok(Ok(system_event_registry))) = get_system_event_registry(program_registry, Some(program_id)) {
-                #[cfg(feature = "spawn-all-system-events")]
-                {
-                    if let Some(events) = system_event_registry.as_ref().get(&resource_id) {
-                        event_buffer.extend(events.into_iter().cloned());
-                    }
-                }
-    
-                if let Some(result) = result {
-                    match result {
-                        Ok(_message) => todo!("Log message"),
-                        #[allow(unused_variables)]
-                        Err(error) => {
-                            #[cfg(not(feature = "spawn-all-system-events"))]
-                            {
-                                if let Ok(use_event) = error.downcast::<bool>() {
-                                    if use_event {
-                                        if let Some(events) = system_event_registry.as_ref().get(&resource_id) {
-                                            event_buffer.extend(events.into_iter().cloned());
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                    }
-                }
-            }
+        for (system_id, result) in results {
+            event_buffer.extend(parse_result(result, program_registry, system_id).into_iter());
+            
         }
 
         event_buffer
