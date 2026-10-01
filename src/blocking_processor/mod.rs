@@ -1,7 +1,7 @@
 use std::{collections::{HashMap, HashSet}, sync::Arc};
 
 use aion_event::prelude::{EventBuffer, EventHistory, EventSystem};
-use aion_processor::prelude::{ActivatableSystemQueue, ProcessConfig, Processor, SystemQueue};
+use aion_processor::prelude::Processor;
 use aion_program::prelude::ProgramRegistry;
 
 use crate::prelude::{get_blocking_processor_system_registry, get_links, get_mut_active_system_registry, get_runtime, get_system_criteria_registry, get_system_metadata, get_threadpool, parse_result};
@@ -15,7 +15,7 @@ impl EventSystem for BlockingProcessor {
         &self,
         program_registry: &Arc<ProgramRegistry>, 
         current_events: &EventBuffer,
-        _event_history: &EventHistory,
+        event_history: &EventHistory,
     ) -> EventBuffer {
         let mut event_buffer = EventBuffer::default();
 
@@ -68,6 +68,9 @@ impl EventSystem for BlockingProcessor {
 
         let threadpool = threadpool.as_ref().map(|threadpool| threadpool.as_ref());
         let runtime = runtime.as_ref().map(|runtime| runtime.as_ref());
+
+        todo!("Put CurrentEvents & EventHistory into ProgramRegistry");
+        todo!("Put EventSender into ProgramRegistry");
 
         let activatable_system_queue = ActivatableSystemQueue::new(system_queue, program_registry);
         

@@ -1,7 +1,6 @@
 use std::{collections::HashSet, sync::Arc};
 
-use aion_program::prelude::{AccessBuilder, AccessSubmissionError, ProgramId, ProgramRegistry, ProgramRegistryReplaceResourceError, ProgramRegistryResolveWithInsert, ResolveResourceError, Resource, ResourceId};
-use aion_processor::prelude::Shared;
+use aion_program::prelude::{Shared, AccessBuilder, AccessSubmissionError, ProgramId, ProgramRegistry, ProgramRegistryReplaceResourceError, ProgramRegistryResolveWithInsert, ResolveResourceError, Resource, ResourceId};
 
 pub type NonBlockingProcessorSystemRegistry = HashSet<ResourceId>;
 

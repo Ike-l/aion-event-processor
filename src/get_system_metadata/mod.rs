@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use aion_processor::prelude::Shared;
-use aion_program::prelude::{AccessBuilder, AccessSubmissionError, ProgramId, ProgramRegistry, ResolveResourceError, ResourceId};
+use aion_program::prelude::{Shared, AccessBuilder, AccessSubmissionError, ProgramId, ProgramRegistry, ResolveResourceError, ResourceId};
 use aion_system::prelude::StoredSystemMetadata;
 
 pub fn get_system_metadata<'a>(

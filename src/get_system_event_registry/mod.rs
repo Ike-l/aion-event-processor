@@ -1,8 +1,7 @@
 use std::{collections::{HashMap, HashSet}, sync::Arc};
 
 use aion_event::prelude::Event;
-use aion_processor::prelude::Shared;
-use aion_program::prelude::{AccessBuilder, AccessSubmissionError, ProgramId, ProgramRegistry, ProgramRegistryReplaceResourceError, ProgramRegistryResolveWithInsert, ResolveResourceError, Resource, ResourceId};
+use aion_program::prelude::{Shared, AccessBuilder, AccessSubmissionError, ProgramId, ProgramRegistry, ProgramRegistryReplaceResourceError, ProgramRegistryResolveWithInsert, ResolveResourceError, Resource, ResourceId};
 
 pub type SystemEventRegistry = HashMap<ResourceId, HashSet<Event>>;
 

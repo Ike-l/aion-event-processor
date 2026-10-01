@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use aion_processor::prelude::Shared;
-use aion_program::prelude::{AccessBuilder, AccessSubmissionError, ProgramRegistry, ResolveResourceError, ResourceId};
+use aion_program::prelude::{Shared, AccessBuilder, AccessSubmissionError, ProgramRegistry, ResolveResourceError, ResourceId};
 
 pub type Runtime = Arc<tokio::runtime::Runtime>;
 
